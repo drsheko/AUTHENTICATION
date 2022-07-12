@@ -20,6 +20,9 @@
           <button>Log In</button>
         </form>
       <%}%>
+      <% for (let i=0 ; i <messages.length;i++){ %> 
+        <h3><%= messages[i]  %> </h3>
+        <% } %>
       <a href="/sign-up">Sign up</a>
  
 </body>

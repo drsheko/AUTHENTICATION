@@ -28,20 +28,19 @@ app.set("view engine", "ejs");
 
 app.use(session({ secret: "cats", resave: false, saveUninitialized: true }));
 passport.use(
-    new LocalStrategy((username, password, done) => {
+    new LocalStrategy({passReqToCallback:true},(req,username, password, done) => {
       User.findOne({ username: username }, (err, user) => {
         if (err) { 
           return done(console.log(err));
         }
         if (!user) {
-          return done(null, false, { message: "Incorrect username" });
+          return done(null, false, req.flash('error',"user is not found :("));
         }
        
         bcrypt.compare(password, user.password,(err, res) => {
           if(err){return done(console.log(err))}
           if (!res) {
-            console.log('shady')
-              return done(null, false, { message: "Incorrect password" })
+              return done(null, false,req.flash('error','Incorrect password...try again'))
           } 
           else{
             return done(null, user);
@@ -68,7 +67,7 @@ passport.use(
 
 
 
-  app.use(flash())
+  app.use(flash())  
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.urlencoded({ extended: false }));
@@ -76,7 +75,9 @@ app.use(function(req, res, next) {
     res.locals.currentUser = req.user;
     next();
   });
-app.get("/", (req, res) => res.render("index" ,{user:req.user}));
+app.get("/", (req, res) => {
+  const messages =req.flash().error||[];
+  res.render("index" ,{user:req.user , messages})});
 
 
 
@@ -104,7 +105,8 @@ app.post("/sign-up", (req, res, next) => {
   app.post('/log-in',
     passport.authenticate("local", {
       successRedirect: "/tem",
-        failureRedirect: "/404"
+        failureRedirect: "/",
+        failureFlash:true,
       })
      )
 
@@ -120,9 +122,12 @@ app.post("/sign-up", (req, res, next) => {
       res.redirect("/");
     });
   });
-
+  app.get('/404', (req,res)=>{
+    
+    res.render('404')
+  })
   app.use((req,res)=>{
-      res.render('404')
+      res.render('404' ,{message:req.flash('message')})
   })
 
 
